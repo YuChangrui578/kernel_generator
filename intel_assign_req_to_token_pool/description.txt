@@ -1,0 +1,64 @@
+## Execution Flow
+
+1. Kernel launches with grid dimensions based on number of requests to process
+2. Each thread block processes one or more request assignment operations
+3. Thread within block calculates unique token requirements for assigned request
+4. Kernel acquires atomic lock to access shared token pool metadata
+5. Validates available tokens in pool against request requirements
+6. Updates token pool allocation counters and metadata structures
+7. Records assigned token range in per-request tracking arrays
+8. Releases atomic lock and commits allocation changes
+9. Synchronizes completion status across thread blocks
+10. Returns success/failure status for each request assignment
+
+## Pseudocode
+
+```
+__global__ void assign_req_to_token_pool(
+    int* request_ids,
+    int* request_token_counts,
+    int* assigned_start_tokens,
+    int* assigned_end_tokens,
+    TokenPoolMetadata* pool_metadata,
+    RequestStatus* request_status,
+    int num_requests
+) {
+    int req_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (req_idx >= num_requests) return;
+    
+    int requested_tokens = request_token_counts[req_idx];
+    int current_pool_offset;
+    
+    // Atomic operation to reserve tokens from pool
+    current_pool_offset = atomicAdd(&pool_metadata->allocated_tokens, requested_tokens);
+    
+    int available_space = pool_metadata->total_capacity - current_pool_offset;
+    
+    if (available_space >= requested_tokens) {
+        // Assign contiguous token range to request
+        assigned_start_tokens[req_idx] = current_pool_offset;
+        assigned_end_tokens[req_idx] = current_pool_offset + requested_tokens;
+        request_status[req_idx] = REQUEST_ASSIGNED;
+    } else {
+        // Rollback allocation - not enough tokens available
+        atomicSub(&pool_metadata->allocated_tokens, requested_tokens);
+        assigned_start_tokens[req_idx] = -1;
+        assigned_end_tokens[req_idx] = -1;
+        request_status[req_idx] = REQUEST_FAILED;
+    }
+}
+```
+
+## Comments
+
+// Each thread handles one request assignment operation
+// Uses atomicAdd to safely increment shared token counter across all threads
+// Calculates current offset after atomic reservation
+// Checks if sufficient tokens remain in pool after reservation attempt  
+// Assigns contiguous token range [start, end) to requesting entity
+// Rolls back allocation if insufficient tokens available in pool
+// Maintains thread-safe access to shared pool metadata structure
+// Records assignment failure when pool capacity exceeded
+// Updates request status to reflect successful/failed assignment
+// Preserves token pool consistency under concurrent access patterns

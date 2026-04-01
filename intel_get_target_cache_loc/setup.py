@@ -3,19 +3,17 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
-    name='intel_get_num_kv_splits',
+    name='intel_get_target_cache_loc',
     ext_modules=[
         CppExtension(
-            name='intel_get_num_kv_splits',
-            sources=['get_num_kv_splits_extension.cpp', 'intel_get_num_kv_splits_kernel.cpp'],
+            name='intel_get_target_cache_loc',
+            sources=['get_target_cache_loc_extension.cpp', 'intel_get_target_cache_loc_kernel.cpp'],
             extra_compile_args=[
                 '-O3', 
                 '-march=native', 
-                '-mavx2', 
                 '-ffast-math',
                 '-funroll-loops',
                 '-fno-semantic-interposition',
-                '-flto',
                 '-fopenmp'
             ],
             language='c++'

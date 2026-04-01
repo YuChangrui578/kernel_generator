@@ -3,11 +3,14 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
-    name='intel_get_num_kv_splits',
+    name='intel_create_extend_after_decode_spec_info',
     ext_modules=[
         CppExtension(
-            name='intel_get_num_kv_splits',
-            sources=['get_num_kv_splits_extension.cpp', 'intel_get_num_kv_splits_kernel.cpp'],
+            name='intel_create_extend_after_decode_spec_info',
+            sources=[
+                'create_extend_after_decode_spec_info_extension.cpp', 
+                'intel_create_extend_after_decode_spec_info_kernel.cpp'
+            ],
             extra_compile_args=[
                 '-O3', 
                 '-march=native', 

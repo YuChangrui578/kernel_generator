@@ -1,0 +1,67 @@
+{
+  "kernel": "get_target_cache_loc",
+  "inputs": [
+    {
+      "name": "tgt_cache_loc",
+      "meaning": "Location in the target cache where data will be stored.",
+      "shape": "N x num_verify_tokens",
+      "inference_role": "Holds the starting index in the target cache for storing accepted tokens."
+    },
+    {
+      "name": "to_free_slots",
+      "meaning": "Array to hold the slot indices that are to be freed in the cache.",
+      "shape": "M",
+      "inference_role": "Contains indices of slots that can be freed in the cache, facilitating efficient memory management."
+    },
+    {
+      "name": "accept_length",
+      "meaning": "Tensor that stores the length of accepted tokens for each batch.",
+      "shape": "bs_upper",
+      "inference_role": "Indicates how many tokens have been accepted for each batch during sampling."
+    },
+    {
+      "name": "to_free_num_slots",
+      "meaning": "Tensor that specifies the number of slots to free for each batch.",
+      "shape": "bs_upper",
+      "inference_role": "Indicates how many slots are available to be freed in the cache."
+    },
+    {
+      "name": "out_cache_loc",
+      "meaning": "Location of the output cache where tokens are temporarily stored.",
+      "shape": "N x num_verify_tokens",
+      "inference_role": "Used to fetch the tokens that will be considered for storage or eviction."
+    },
+    {
+      "name": "num_verify_tokens",
+      "meaning": "Constant representing the number of tokens to verify.",
+      "shape": "scalar",
+      "inference_role": "Defines the scope of verification across the token cache."
+    },
+    {
+      "name": "num_verify_tokens_upper",
+      "meaning": "Upper bound for the number of verify tokens, used for grid sizing.",
+      "shape": "scalar",
+      "inference_role": "Sets the maximum number of tokens for processing within the kernel."
+    },
+    {
+      "name": "bs_upper",
+      "meaning": "Upper bound for the batch size, utilized for grid size calculations.",
+      "shape": "scalar",
+      "inference_role": "Determines the maximum number of batches to process concurrently."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "tgt_cache_loc (with accepted tokens)",
+      "meaning": "Modified target cache location containing accepted tokens after execution.",
+      "shape": "N x num_verify_tokens",
+      "inference_role": "Stores the accepted tokens after they have been processed and potentially relocated."
+    },
+    {
+      "name": "to_free_slots (updated)",
+      "meaning": "Updated array indicating the specific slots that are now free after processing.",
+      "shape": "M",
+      "inference_role": "Provides indices of slots that have been freed, aiding in memory management."
+    }
+  ]
+}

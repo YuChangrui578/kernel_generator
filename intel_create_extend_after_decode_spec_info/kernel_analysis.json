@@ -1,0 +1,49 @@
+{
+  "kernel": "create_extend_after_decode_spec_info",
+  "inputs": [
+    {
+      "name": "verified_id",
+      "meaning": "Tensor containing the verified input IDs used for model inference, representing the tokens that have been confirmed as valid.",
+      "shape": "tensor of shape (batch_size,)",
+      "inference_role": "Provides the confirmed input token IDs for further processing in the speculative decoding."
+    },
+    {
+      "name": "seq_lens",
+      "meaning": "Tensor containing the lengths of the sequences in the current batch, indicating how many tokens are present in each input sequence.",
+      "shape": "tensor of shape (batch_size,)",
+      "inference_role": "Used to determine how many tokens should be processed for each sequence during inference."
+    },
+    {
+      "name": "accept_lens",
+      "meaning": "Tensor containing the lengths of accepted tokens for each input sequence, representing how many tokens were accepted in previous decoding steps.",
+      "shape": "tensor of shape (batch_size,)",
+      "inference_role": "Informs the model about the number of valid tokens to consider from each sequence during speculative execution."
+    },
+    {
+      "name": "positions",
+      "meaning": "Tensor that stores calculated positions of the tokens in the sequences, indicating where each token should be positioned after potential extensions.",
+      "shape": "tensor of shape (batch_size,)",
+      "inference_role": "Holds updated positional information for tokens, critical for handling sequential token processing."
+    },
+    {
+      "name": "new_verified_id",
+      "meaning": "Output tensor that will hold the newly computed verified IDs after processing the current sequences.",
+      "shape": "tensor of shape (batch_size,)",
+      "inference_role": "Stores the result of the verification process for input IDs, essential for feeding the next steps during inference."
+    },
+    {
+      "name": "bs_upper",
+      "meaning": "A constant representing the upper bound of the batch size or based on speculative steps, dictating how many elements to process.",
+      "shape": "scalar",
+      "inference_role": "Defines the processing limit for the kernel execution, ensuring that operations respect the batch size."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "new_verified_id",
+      "meaning": "The tensor that contains the IDs of tokens that have been confirmed for inclusion in the next decoding step.",
+      "shape": "tensor of shape (batch_size,)",
+      "inference_role": "Used in subsequent steps of the beyond-acceptance inference process to ensure that only verified tokens are considered."
+    }
+  ]
+}

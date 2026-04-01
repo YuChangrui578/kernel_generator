@@ -3,11 +3,11 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
-    name='intel_get_num_kv_splits',
+    name='intel_align_evict_mask_to_page_size',
     ext_modules=[
         CppExtension(
-            name='intel_get_num_kv_splits',
-            sources=['get_num_kv_splits_extension.cpp', 'intel_get_num_kv_splits_kernel.cpp'],
+            name='intel_align_evict_mask_to_page_size',
+            sources=['align_evict_mask_to_page_size_extension.cpp', 'intel_align_evict_mask_to_page_size_kernel.cpp'],
             extra_compile_args=[
                 '-O3', 
                 '-march=native', 

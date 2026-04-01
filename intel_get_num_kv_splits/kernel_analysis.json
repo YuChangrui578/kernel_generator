@@ -1,0 +1,67 @@
+{
+  "kernel": "get_num_kv_splits_triton",
+  "inputs": [
+    {
+      "name": "num_kv_splits_ptr",
+      "meaning": "Pointer to the tensor that will store the computed number of key-value splits for each sequence group.",
+      "shape": "Tensor of shape (num_group * num_seq), where num_group is computed based on heads and num_seq is the number of sequences.",
+      "inference_role": "Stores the computed number of key-value splits for each sequence group, used to optimize attention computation."
+    },
+    {
+      "name": "seq_lens_ptr",
+      "meaning": "Pointer to the tensor containing the lengths of each sequence.",
+      "shape": "Tensor of shape (num_seq), where num_seq is the number of sequences.",
+      "inference_role": "Provides necessary sequence length information to calculate key-value split sizes."
+    },
+    {
+      "name": "num_seq",
+      "meaning": "The number of sequences being processed.",
+      "shape": "Scalar.",
+      "inference_role": "Used to determine how many sequences are available for processing in the model."
+    },
+    {
+      "name": "num_group",
+      "meaning": "The number of groups of heads used in the model.",
+      "shape": "Scalar.",
+      "inference_role": "Determines how heads are grouped for parallel processing in multi-head attention."
+    },
+    {
+      "name": "num_head",
+      "meaning": "Total number of attention heads.",
+      "shape": "Scalar.",
+      "inference_role": "Indicates the dimensionality of the attention mechanism."
+    },
+    {
+      "name": "num_kv_head",
+      "meaning": "Number of heads allocated for key-value processing.",
+      "shape": "Scalar.",
+      "inference_role": "Defines the configuration of heads specifically used for initiating key/value attention."
+    },
+    {
+      "name": "max_kv_splits",
+      "meaning": "Maximum number of splits allowed for key-value pairs.",
+      "shape": "Scalar.",
+      "inference_role": "Constrains the maximum segmentation of sequences for key-value pairs for efficient processing."
+    },
+    {
+      "name": "device_core_count",
+      "meaning": "Number of device cores available.",
+      "shape": "Scalar.",
+      "inference_role": "Used to determine how to distribute computation across available device resources."
+    },
+    {
+      "name": "MAX_NUM_SEQ",
+      "meaning": "Maximum number of sequences to handle for computations.",
+      "shape": "Scalar (constant).",
+      "inference_role": "Provides a ceiling limit for the sequences processed in a single kernel invocation."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "num_kv_splits",
+      "meaning": "The computed number of key-value splits for each group of sequences.",
+      "shape": "Tensor of shape (num_group * num_seq), where each entry corresponds to a sequence group.",
+      "inference_role": "Used for determining how to optimize attention calculations for the model, specifically how key-value pairs are partitioned in attention mechanisms."
+    }
+  ]
+}

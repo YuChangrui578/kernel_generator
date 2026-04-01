@@ -1,0 +1,43 @@
+{
+  "kernel": "align_evict_mask_to_page_size",
+  "inputs": [
+    {
+      "name": "seq_lens",
+      "meaning": "Lengths of each sequence in the batch, indicating how many tokens are actually present in each example.",
+      "shape": "Tensor of shape [batch_size]",
+      "inference_role": "Used to determine the current length of sequences to correctly align eviction of unused tokens."
+    },
+    {
+      "name": "evict_mask",
+      "meaning": "A boolean mask indicating which draft tokens can be evicted from the memory cache.",
+      "shape": "Tensor of shape [batch_size, num_draft_tokens]",
+      "inference_role": "Used to track which tokens should be retained vs. which can be freed, helping manage memory efficiently during inference."
+    },
+    {
+      "name": "page_size",
+      "meaning": "The size of memory pages which helps in aligning eviction of tokens to optimize memory operations.",
+      "shape": "Scalar",
+      "inference_role": "Defines the granularity of token eviction from memory, ensuring alignment with the memory architecture."
+    },
+    {
+      "name": "num_draft_tokens",
+      "meaning": "The number of draft tokens generated in the current sequence processing.",
+      "shape": "Scalar",
+      "inference_role": "Helps determine the operating range for the eviction process, ensuring operations don't exceed available draft tokens."
+    },
+    {
+      "name": "BLOCK_SIZE",
+      "meaning": "The size of the block used for processing parallel computations in Triton.",
+      "shape": "Scalar (commonly a power of 2)",
+      "inference_role": "Sets the processing block size to ensure efficient execution in parallel within the kernel."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "evict_mask",
+      "meaning": "Updated eviction mask reflecting which tokens have been marked for eviction post alignment.",
+      "shape": "Tensor of shape [batch_size, num_draft_tokens]",
+      "inference_role": "Used to inform the garbage collection of tokens in the memory, thereby improving memory utilization during model inference."
+    }
+  ]
+}

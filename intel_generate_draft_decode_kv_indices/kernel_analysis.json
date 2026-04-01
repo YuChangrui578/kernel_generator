@@ -1,0 +1,97 @@
+{
+  "kernel": "generate_draft_decode_kv_indices",
+  "inputs": [
+    {
+      "name": "req_pool_indices",
+      "meaning": "Indices for the required token pool used for accessing embeddings or representations of tokens.",
+      "shape": "int32 tensor of shape [num_seqs]",
+      "inference_role": "Provides the indices to the token pool for each sequence in the batch."
+    },
+    {
+      "name": "req_to_token",
+      "meaning": "Mapping of request indices to token representations in the token pool.",
+      "shape": "float tensor of shape [num_tokens, embedding_dim]",
+      "inference_role": "Facilitates lookup of token representations for each request."
+    },
+    {
+      "name": "paged_kernel_lens",
+      "meaning": "Lengths of sequences in a paged format, defining how many tokens each sequence contains.",
+      "shape": "int32 tensor of shape [num_seqs]",
+      "inference_role": "Used to determine how many tokens to process for each sequence."
+    },
+    {
+      "name": "kv_indices",
+      "meaning": "Indices for the key-value pairs that are being generated and populated in this kernel.",
+      "shape": "int32 tensor of shape [speculative_num_steps, num_seqs, topk]",
+      "inference_role": "Stores the indices pointing to the generated key-value representations."
+    },
+    {
+      "name": "kv_indptr",
+      "meaning": "Pointer indices for accessing the key-value pairs, determining how many keys belong to each request.",
+      "shape": "int32 tensor of shape [num_seqs * topk]",
+      "inference_role": "Maintains the offsets for accessing the key-value pairs for each sequence."
+    },
+    {
+      "name": "positions",
+      "meaning": "Tracks the positions of tokens in the sequence, often used for attention mechanisms.",
+      "shape": "int32 tensor of shape [num_tokens_upper]",
+      "inference_role": "Facilitates position encoding to ensure tokens are aware of their relative positions."
+    },
+    {
+      "name": "pool_len",
+      "meaning": "Length of the token pool, defines the range of valid indices in the token pool.",
+      "shape": "scalar",
+      "inference_role": "Sets the upper limit for indexing in the token pool."
+    },
+    {
+      "name": "kv_indices_stride",
+      "meaning": "Stride in the kv_indices tensor, indicating step size for traversing the second dimension.",
+      "shape": "scalar",
+      "inference_role": "Used to determine the appropriate offset when storing multiple sequences' indices."
+    },
+    {
+      "name": "kv_indptr_stride",
+      "meaning": "Stride in the kv_indptr tensor, indicating step size for traversing the key-value pointer structure.",
+      "shape": "scalar",
+      "inference_role": "Helps in indexing multiple sequences for the key-value pointers."
+    },
+    {
+      "name": "bs_upper",
+      "meaning": "Upper limit for the batch size, typically a power of two for optimization.",
+      "shape": "scalar",
+      "inference_role": "Defines the range of sequences to process in a single kernel call."
+    },
+    {
+      "name": "iter_upper",
+      "meaning": "Upper limit for the number of iterations in speculative decoding, typically a power of two.",
+      "shape": "scalar",
+      "inference_role": "Specifies the maximum number of iterations to run in the kernel."
+    },
+    {
+      "name": "num_tokens_upper",
+      "meaning": "Upper limit for the total number of tokens processed, also optimized to be a power of two.",
+      "shape": "scalar",
+      "inference_role": "Sets bounds for efficient token processing in memory."
+    },
+    {
+      "name": "page_size",
+      "meaning": "Defines the size of pages for accessing token batches, impacting memory access patterns.",
+      "shape": "scalar",
+      "inference_role": "Optimizes loading and storing data to/from the token pool."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "kv_indices",
+      "meaning": "Populated tensor representing the indices of key-value pairs generated during decoding.",
+      "shape": "int32 tensor of shape [speculative_num_steps, num_seqs, topk]",
+      "inference_role": "Used to access the generated key-value representations during model inference."
+    },
+    {
+      "name": "kv_indptr",
+      "meaning": "Updated pointer indices for accessing the corresponding key-value pairs for each request.",
+      "shape": "int32 tensor of shape [num_seqs * topk]",
+      "inference_role": "Used for determining where to access key-value pairs in the main memory."
+    }
+  ]
+}

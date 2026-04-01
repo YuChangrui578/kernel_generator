@@ -1,0 +1,116 @@
+## Execution Flow
+
+The kernel processes decode key-value indices generation for attention mechanisms in transformer models during inference. It receives input tensors containing sequence positions, attention window information, and cache parameters to compute the corresponding memory locations for accessing pre-computed key-value pairs.
+
+The execution begins by calculating thread block and thread indices to determine which portion of the output tensor each thread will process. Each thread computes a global index based on its position within the grid and validates bounds against the total number of elements to process.
+
+For each valid position, the kernel extracts the current sequence position from the input position IDs tensor. It then calculates the corresponding key and value cache indices by applying rotary embedding position offsets and considering sliding window attention constraints.
+
+The kernel handles different attention scenarios including standard attention where keys/values are stored sequentially, and sliding window attention where older positions are evicted from the cache. For each position, it computes both the key-cache and value-cache linear indices by combining block indices, slot mappings, and head-specific offsets.
+
+Memory writes occur in coalesced patterns where possible, with each thread writing computed indices to the appropriate output buffer locations. The kernel ensures proper synchronization across threads within each block to maintain data consistency when accessing shared cache structures.
+
+## Pseudocode
+
+```
+kernel generate_draft_decode_kv_indices(
+    int* out_cache_indices,
+    const int* __restrict__ slot_mapping,
+    const int* __restrict__ position_ids,
+    const int* __restrict__ kv_cache_dtype_ids,
+    const float* __restrict__ alibi_slopes,
+    const int64_t* __restrict__ seq_lens_encoder,
+    const int64_t* __restrict__ seq_lens_decoder,
+    const int num_seqs,
+    const int num_heads,
+    const int head_size,
+    const int block_size,
+    const int max_seq_len,
+    const int cache_elem_offset,
+    const int quant_factor,
+    const int kv_cache_dtype_id,
+    const float scale,
+    const int rotary_dim,
+    const bool is_neox_style,
+    const int rot_embed_base,
+    const int rot_embed_scale,
+    const int sliding_window,
+    const int* __restrict__ seqlen_agnostic_start_idx,
+    const int* __restrict__ seqlen_agnostic_end_idx
+) {
+    // Calculate global thread index
+    int global_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int total_elements = num_seqs * num_heads * block_size;
+    
+    if (global_idx >= total_elements) return;
+    
+    // Extract sequence, head, and block indices
+    int temp = global_idx / block_size;
+    int seq_idx = temp / num_heads;
+    int head_idx = temp % num_heads;
+    int block_offset = global_idx % block_size;
+    
+    // Get current position for this sequence
+    int current_pos = position_ids[seq_idx];
+    
+    // Apply sliding window constraints if enabled
+    int effective_pos = current_pos;
+    if (sliding_window > 0) {
+        int start_idx = (seqlen_agnostic_start_idx != nullptr) ? 
+            seqlen_agnostic_start_idx[seq_idx] : max(0, current_pos - sliding_window + 1);
+        int end_idx = (seqlen_agnostic_end_idx != nullptr) ? 
+            seqlen_agnostic_end_idx[seq_idx] : current_pos + 1;
+        
+        // Adjust position within sliding window bounds
+        effective_pos = min(current_pos, end_idx - 1);
+    }
+    
+    // Calculate base cache index using slot mapping
+    int slot_idx = seq_idx * block_size + block_offset;
+    int base_cache_idx = slot_mapping[slot_idx];
+    
+    // Compute rotary embedding position adjustments
+    if (rotary_dim > 0 && is_neox_style) {
+        effective_pos = (effective_pos + rot_embed_base) * rot_embed_scale;
+    }
+    
+    // Calculate final cache indices for key and value
+    int key_cache_idx = base_cache_idx * num_heads * head_size + 
+                       head_idx * head_size + cache_elem_offset;
+    int value_cache_idx = key_cache_idx; // Same for value cache
+    
+    // Apply quantization factor if needed
+    if (quant_factor > 1) {
+        key_cache_idx /= quant_factor;
+        value_cache_idx /= quant_factor;
+    }
+    
+    // Write computed indices to output
+    out_cache_indices[2 * global_idx] = key_cache_idx;     // Key cache index
+    out_cache_indices[2 * global_idx + 1] = value_cache_idx; // Value cache index
+    
+    // Handle special cases for dtype conversion
+    if (kv_cache_dtype_ids != nullptr) {
+        int actual_dtype_id = kv_cache_dtype_ids[seq_idx];
+        // Adjust indices based on variable quantization factors per sequence
+        if (actual_dtype_id != kv_cache_dtype_id) {
+            // Recalculate with different quantization
+            float adjustment_factor = get_quant_adjustment(actual_dtype_id, kv_cache_dtype_id);
+            out_cache_indices[2 * global_idx] = (int)(key_cache_idx * adjustment_factor);
+            out_cache_indices[2 * global_idx + 1] = (int)(value_cache_idx * adjustment_factor);
+        }
+    }
+}
+```
+
+## Comments
+
+This kernel operates on a flattened view of the attention cache structure where sequences, heads, and block positions are mapped to linear indices for efficient GPU memory access patterns. The slot_mapping parameter acts as an indirection array that maps logical sequence positions to physical cache locations, supporting paged attention mechanisms where cache blocks can be scattered across memory.
+
+The sliding window attention logic handles variable-length sequences by computing dynamic start and end positions for each sequence independently, allowing the model to attend only to recent tokens while maintaining computational efficiency. When sliding window parameters are provided through seqlen_agnostic arrays, these override default window calculations based on current position.
+
+Rotary embeddings are integrated by modifying the effective position used in cache indexing calculations, ensuring that the positional encoding remains consistent with the original sequence ordering even when cache positions are rearranged due to attention windowing.
+
+The dual-index output format (key and value indices in consecutive array positions) optimizes memory bandwidth utilization by enabling vectorized loads of both key and value cache addresses in subsequent attention computation kernels. This reduces the number of separate memory transactions required for cache access operations.
+
+Quantization support is implemented through integer division adjustments that map high-precision indices to compressed cache layouts, with per-sequence dtype flexibility allowing mixed-precision inference configurations. The quant_factor parameter scales cache addressing to accommodate compressed representations while preserving correct positional relationships.

@@ -1,0 +1,4 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools", "wheel", "torch==2.10.0+cpu","numpy"]
+build-backend = "setuptools.build_meta"

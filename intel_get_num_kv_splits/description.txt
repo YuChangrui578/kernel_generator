@@ -1,0 +1,54 @@
+```
+KERNEL: get_num_kv_splits
+
+EXECUTION FLOW:
+1. Initialize input parameters: total_kv_length, max_kv_per_split, num_heads, head_dim
+2. Calculate the minimum required splits based on maximum capacity per split
+3. Compute remainder elements after even distribution
+4. Determine final number of splits considering head alignment constraints
+5. Return the calculated number of splits
+
+PSEUDOCODE:
+function get_num_kv_splits(total_kv_length, max_kv_per_split, num_heads, head_dim):
+    // Step 1: Validate input parameters
+    if max_kv_per_split <= 0:
+        return 1
+    
+    // Step 2: Calculate base number of splits needed without constraints
+    base_splits = ceil(total_kv_length / max_kv_per_split)
+    
+    // Step 3: Consider head dimension alignment requirements
+    // Each split should ideally contain complete head segments
+    kv_elements_per_head = head_dim * num_heads
+    
+    // Step 4: Ensure splits align with head boundaries when possible
+    if kv_elements_per_head > 0:
+        // Align total length to head boundary if not already aligned
+        aligned_total = ceil(total_kv_length / kv_elements_per_head) * kv_elements_per_head
+        
+        // Recalculate splits with alignment constraint
+        aligned_max_per_split = floor(max_kv_per_split / kv_elements_per_head) * kv_elements_per_head
+        if aligned_max_per_split <= 0:
+            // If alignment would eliminate split capacity, use original max
+            aligned_max_per_split = max_kv_per_split
+        
+        aligned_splits = ceil(aligned_total / aligned_max_per_split)
+        base_splits = max(base_splits, aligned_splits)
+    
+    // Step 5: Handle edge case where total is zero
+    if total_kv_length == 0:
+        return 0
+    
+    // Step 6: Return computed number of splits
+    return base_splits
+
+COMMENTS:
+// This kernel calculates optimal number of splits for KV cache management
+// Used in attention mechanisms to divide large KV sequences into manageable chunks
+// max_kv_per_split represents hardware/memory constraints per processing unit
+// head_dim and num_heads provide tensor shape information for alignment optimization
+// The function ensures memory access patterns remain efficient across splits
+// Returns integer count representing how many partitions the KV data should be divided into
+// Splitting strategy balances between memory limits and computational efficiency
+// Alignment considerations prevent partial head processing across split boundaries
+```

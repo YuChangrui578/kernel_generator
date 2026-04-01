@@ -1,0 +1,55 @@
+{
+  "kernel": "assign_req_to_token_pool",
+  "inputs": [
+    {
+      "name": "req_pool_indices",
+      "meaning": "Indices mapping requests to token pools.",
+      "shape": "1D tensor of size (batch_size,)",
+      "inference_role": "Indicates which token pool each request will be assigned to."
+    },
+    {
+      "name": "req_to_token",
+      "meaning": "Tensor that maps requests to their corresponding token representations.",
+      "shape": "2D tensor of size (num_requests, pool_len)",
+      "inference_role": "Provides the actual token representations for the requests."
+    },
+    {
+      "name": "start_offset",
+      "meaning": "Offset for the beginning of tokens for each request in the cache.",
+      "shape": "1D tensor of size (batch_size,)",
+      "inference_role": "Determines where the current batch of tokens starts in the cache."
+    },
+    {
+      "name": "end_offset",
+      "meaning": "Offset for the end of tokens for each request in the cache.",
+      "shape": "1D tensor of size (batch_size,)",
+      "inference_role": "Determines where the current batch of tokens ends in the cache."
+    },
+    {
+      "name": "out_cache_loc",
+      "meaning": "Location in the cache where the output tokens will be stored.",
+      "shape": "1D tensor of size (batch_size,)",
+      "inference_role": "Specifies where the result tokens for requests will be written."
+    },
+    {
+      "name": "pool_len",
+      "meaning": "Length of the token pool for each request.",
+      "shape": "scalar (integer)",
+      "inference_role": "Indicates the maximum number of tokens that can be assigned to each request."
+    },
+    {
+      "name": "bs_upper",
+      "meaning": "Upper bound for the batch size, rounded up to the next power of 2.",
+      "shape": "scalar (integer)",
+      "inference_role": "Used for optimizing memory accesses during processing."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "token_pool",
+      "meaning": "Tensor that stores the output tokens assigned to the token pool.",
+      "shape": "2D tensor of size (num_requests, pool_len)",
+      "inference_role": "Contains the final tokens assigned to each request after processing."
+    }
+  ]
+}

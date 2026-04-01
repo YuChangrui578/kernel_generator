@@ -1,0 +1,96 @@
+## Execution Flow
+
+1. Kernel launches with grid-stride loop over batch elements
+2. Each thread block processes one or more sequence positions in the current decode step
+3. Load decoded token information from temporary buffers
+4. Extend the speculative info structure with new decoded tokens
+5. Update sequence metadata including lengths and attention masks
+6. Propagate speculative decoding state to subsequent layers
+7. Synchronize thread blocks before proceeding to next phase
+
+## Pseudocode
+
+```
+__global__ void create_extend_after_decode_spec_info(
+    int* decoded_tokens,
+    SpeculativeInfo* spec_info,
+    int* sequence_lengths,
+    int* attention_masks,
+    int batch_size,
+    int current_position,
+    int max_sequence_length
+) {
+    int batch_idx = blockIdx.x;
+    int seq_pos = threadIdx.x + blockIdx.y * blockDim.x;
+    
+    if (batch_idx >= batch_size) return;
+    
+    __shared__ int local_decoded_token;
+    __shared__ int local_seq_len;
+    
+    // Step 1: Load decoded token for this position
+    if (seq_pos == 0) {
+        local_decoded_token = decoded_tokens[batch_idx];
+        local_seq_len = sequence_lengths[batch_idx];
+    }
+    __syncthreads();
+    
+    // Step 2: Extend speculative info with new decoded token
+    int target_pos = local_seq_len;
+    if (target_pos < max_sequence_length) {
+        spec_info[batch_idx].tokens[target_pos] = local_decoded_token;
+        spec_info[batch_idx].logits[target_pos] = 
+            spec_info[batch_idx].pending_logits[0];
+        
+        // Shift remaining pending values forward
+        for (int i = 0; i < spec_info[batch_idx].num_pending - 1; i++) {
+            spec_info[batch_idx].pending_logits[i] = 
+                spec_info[batch_idx].pending_logits[i + 1];
+        }
+        
+        spec_info[batch_idx].num_pending--;
+    }
+    
+    // Step 3: Update sequence length and attention mask
+    if (seq_pos == 0) {
+        atomicAdd(&sequence_lengths[batch_idx], 1);
+        int new_len = sequence_lengths[batch_idx];
+        
+        // Update attention mask for new position
+        attention_masks[batch_idx * max_sequence_length + new_len - 1] = 1;
+    }
+    
+    // Step 4: Validate and correct speculative chain if needed
+    if (target_pos > 0 && target_pos < max_sequence_length) {
+        int parent_token = spec_info[batch_idx].tokens[target_pos - 1];
+        bool is_valid_extension = validate_token_connection(
+            parent_token, local_decoded_token, spec_info[batch_idx]
+        );
+        
+        if (!is_valid_extension) {
+            spec_info[batch_idx].speculation_depth = target_pos;
+        }
+    }
+    
+    __syncthreads();
+}
+```
+
+## Comments
+
+// This kernel bridges the gap between token decoding and speculative info maintenance
+// It ensures that newly decoded tokens are properly integrated into the speculative
+// decoding framework while preserving the integrity of the prediction chain
+
+// The kernel handles the critical transition point where speculative predictions
+// are replaced with actual decoded tokens, requiring careful synchronization
+// between different components of the speculative decoding pipeline
+
+// Memory access patterns are optimized for coalesced reads of token sequences
+// while maintaining thread divergence minimization during boundary checks
+
+// Atomic operations ensure thread safety when updating shared sequence metadata
+// across multiple thread blocks operating on overlapping memory regions
+
+// The validation step prevents propagation of incorrect speculative chains
+// by checking token compatibility against learned transition probabilities

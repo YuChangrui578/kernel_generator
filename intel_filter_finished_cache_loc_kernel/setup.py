@@ -3,11 +3,11 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
-    name='intel_get_num_kv_splits',
+    name='intel_filter_finished_cache_loc_kernel',
     ext_modules=[
         CppExtension(
-            name='intel_get_num_kv_splits',
-            sources=['get_num_kv_splits_extension.cpp', 'intel_get_num_kv_splits_kernel.cpp'],
+            name='intel_filter_finished_cache_loc_kernel',
+            sources=['filter_finished_cache_loc_kernel_extension.cpp', 'intel_filter_finished_cache_loc_kernel_kernel.cpp'],
             extra_compile_args=[
                 '-O3', 
                 '-march=native', 

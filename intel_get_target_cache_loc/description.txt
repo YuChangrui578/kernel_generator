@@ -1,0 +1,116 @@
+```
+FUNCTION get_target_cache_loc(input_tensor, target_address, cache_config) -> cache_location_info:
+
+    // Step 1: Extract tensor metadata and dimensions
+    tensor_shape = input_tensor.shape
+    tensor_dtype = input_tensor.dtype
+    tensor_stride = input_tensor.stride
+    
+    // Step 2: Calculate base memory address for cache lookup
+    base_addr = calculate_base_address(input_tensor)
+    
+    // Step 3: Validate target address against tensor bounds
+    IF NOT is_valid_target_address(target_address, tensor_shape, base_addr):
+        RAISE InvalidAddressException("Target address outside tensor bounds")
+    
+    // Step 4: Determine cache hierarchy level based on configuration
+    cache_level = determine_cache_level(cache_config)
+    
+    // Step 5: Compute cache set index using target address
+    cache_set_index = (target_address / cache_config.line_size) % cache_config.num_sets
+    
+    // Step 6: Calculate cache line offset within the cache block
+    cache_line_offset = target_address % cache_config.line_size
+    
+    // Step 7: Compute physical cache location coordinates
+    row_index = cache_set_index / cache_config.associativity
+    col_index = cache_set_index % cache_config.associativity
+    
+    // Step 8: Check cache tag to verify if data exists at this location
+    cache_tag = extract_cache_tag(target_address, cache_config)
+    tag_match = compare_with_existing_tag(row_index, col_index, cache_tag)
+    
+    // Step 9: Determine cache status (hit/miss/partial hit)
+    cache_status = evaluate_cache_hit_status(tag_match, cache_config.valid_bits[row_index][col_index])
+    
+    // Step 10: Calculate replacement policy index if needed
+    replacement_index = -1
+    IF cache_status == CACHE_MISS:
+        replacement_index = apply_replacement_policy(cache_config.replacement_algo, row_index)
+    
+    // Step 11: Compute prefetch addresses if enabled
+    prefetch_addresses = []
+    IF cache_config.prefetch_enabled:
+        prefetch_addresses = generate_prefetch_addresses(target_address, cache_config.prefetch_distance)
+    
+    // Step 12: Package return information
+    cache_location_info = {
+        'cache_set': cache_set_index,
+        'way_index': col_index,
+        'line_offset': cache_line_offset,
+        'physical_row': row_index,
+        'tag': cache_tag,
+        'status': cache_status,
+        'replacement_candidate': replacement_index,
+        'prefetch_targets': prefetch_addresses,
+        'is_aligned': (target_address % cache_config.alignment_boundary) == 0
+    }
+    
+    RETURN cache_location_info
+
+
+// Supporting helper functions:
+
+FUNCTION calculate_base_address(tensor):
+    base = tensor.data_ptr()
+    FOR dim_idx IN range(tensor.ndim):
+        base -= tensor.offsets[dim_idx] * tensor.strides[dim_idx]
+    RETURN base
+
+FUNCTION is_valid_target_address(addr, shape, base_addr):
+    total_elements = PRODUCT(shape)
+    max_addr = base_addr + (total_elements * sizeof(dtype))
+    RETURN addr >= base_addr AND addr < max_addr
+
+FUNCTION determine_cache_level(config):
+    IF config.level == "L1":
+        RETURN 1
+    ELIF config.level == "L2":
+        RETURN 2
+    ELIF config.level == "L3":
+        RETURN 3
+    ELSE:
+        RETURN 1  // default to L1
+
+FUNCTION extract_cache_tag(address, config):
+    shift_amount = LOG2(config.line_size) + LOG2(config.num_sets)
+    RETURN (address >> shift_amount)
+
+FUNCTION compare_with_existing_tag(row, col, new_tag):
+    existing_tag = cache_tags[row][col]
+    RETURN existing_tag == new_tag
+
+FUNCTION evaluate_cache_hit_status(tag_match, valid_bit):
+    IF NOT valid_bit:
+        RETURN CACHE_MISS
+    ELIF tag_match:
+        RETURN CACHE_HIT
+    ELSE:
+        RETURN CACHE_CONFLICT_MISS
+
+FUNCTION apply_replacement_policy(algorithm, set_index):
+    IF algorithm == "LRU":
+        RETURN find_lru_way(set_index)
+    ELIF algorithm == "FIFO":
+        RETURN find_fifo_way(set_index)
+    ELIF algorithm == "RANDOM":
+        RETURN random.randint(0, associativity-1)
+    ELSE:
+        RETURN 0  // default
+
+FUNCTION generate_prefetch_addresses(target_addr, distance):
+    prefetch_addrs = []
+    FOR i IN range(1, distance+1):
+        prefetch_addrs.append(target_addr + (i * cache_line_size))
+    RETURN prefetch_addrs
+```

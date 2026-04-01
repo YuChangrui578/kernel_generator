@@ -1,0 +1,85 @@
+```
+KERNEL: align_evict_mask_to_page_size
+
+EXECUTION FLOW:
+1. Thread block launches with multiple threads per block
+2. Each thread calculates its global thread index
+3. Threads determine their working range based on page size alignment
+4. Load eviction mask data from global memory into shared memory
+5. Apply alignment operations to ensure mask boundaries match page boundaries
+6. Perform bitwise operations to adjust mask bits for proper page alignment
+7. Write aligned eviction mask back to global memory
+8. Synchronize threads within block before completion
+
+PSEUDOCODE:
+__global__ void align_evict_mask_to_page_size(
+    uint32_t* eviction_mask,
+    uint32_t* aligned_mask,
+    size_t mask_size,
+    size_t page_size,
+    size_t total_elements)
+{
+    // Calculate global thread index
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    // Calculate page-aligned boundaries for this thread's work
+    size_t page_aligned_start = (tid * sizeof(uint32_t)) & ~(page_size - 1);
+    size_t page_aligned_end = ((tid + 1) * sizeof(uint32_t)) & ~(page_size - 1);
+    
+    // Shared memory for cooperative processing within block
+    __shared__ uint32_t local_mask[256]; // Assuming max 256 threads per block
+    
+    // Load mask data cooperatively
+    if (tid < total_elements) {
+        local_mask[threadIdx.x] = eviction_mask[tid];
+    }
+    
+    __syncthreads();
+    
+    // Process alignment for current thread's portion
+    if (tid < total_elements) {
+        // Determine which page boundary this element belongs to
+        size_t current_page_boundary = (tid * sizeof(uint32_t)) / page_size;
+        
+        // Calculate offset within current page
+        size_t offset_in_page = (tid * sizeof(uint32_t)) % page_size;
+        
+        // Align mask bit to respect page boundaries
+        // If element crosses page boundary, extend mask to include full page
+        uint32_t original_mask = local_mask[threadIdx.x];
+        uint32_t aligned_mask_value = 0;
+        
+        // Check if this mask affects page-aligned region
+        if (offset_in_page == 0 || 
+            (offset_in_page + sizeof(uint32_t)) > page_size) {
+            // Element spans page boundary - set entire page in mask
+            aligned_mask_value = 0xFFFFFFFF; // Full 32-bit mask for page alignment
+        } else {
+            // No page boundary crossing - preserve original mask
+            aligned_mask_value = original_mask;
+        }
+        
+        // Store aligned result
+        aligned_mask[tid] = aligned_mask_value;
+    }
+    
+    __syncthreads();
+}
+
+COMMENTS:
+// This kernel ensures that eviction masks align with memory page boundaries
+// to optimize memory management operations during cache eviction processes
+// Page alignment is critical for efficient virtual memory operations
+
+// Page size alignment prevents partial page evictions which can cause
+// memory fragmentation and inefficient memory usage patterns
+
+// Cooperative loading reduces global memory bandwidth requirements
+// by having threads in a block share data loading responsibilities
+
+// The alignment process may expand the eviction mask to cover complete pages
+// even if only partial page content needs eviction, ensuring atomicity
+
+// Bitwise operations maintain data integrity while enforcing page boundaries
+// Thread synchronization ensures all operations complete before kernel exit
+```

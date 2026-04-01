@@ -1,0 +1,1 @@
+intel_generate_draft_decode_kv_indices
