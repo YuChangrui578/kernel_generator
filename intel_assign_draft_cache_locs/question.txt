@@ -1,0 +1,1 @@
+对于这个kernel，并没有设置自生成的ut，但是对于其自带的ut，将triton kernel方法替换为生成的kernel方法，是完全能够通过的
