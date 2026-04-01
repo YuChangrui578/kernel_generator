@@ -118,8 +118,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         # Compare results
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_boundary_values_cpu_extension_vs_triton(self):
         # Test with boundary values
@@ -171,8 +171,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         # Compare results
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_with_larger_batch_cpu_extension_vs_triton(self):
         # Test with larger batch size - updated to use power of 2 for num_verify_tokens_upper
@@ -230,8 +230,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_empty_case_cpu_extension_vs_triton(self):
         # Test with empty case (all lengths zero)
@@ -285,8 +285,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_dtype_int64_cpu_extension_vs_triton(self):
         # Test with int64 dtype
@@ -340,8 +340,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_single_batch_edge_case(self):
         # Test with single batch edge case
@@ -392,8 +392,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_different_dtypes(self):
         # Test with different dtypes to ensure compatibility
@@ -449,8 +449,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
                 tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
                 to_free_slots_triton=to_free_slots_triton.to("cpu")
                 # Compare results
-                self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-                self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+                self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_large_accept_length(self):
         # Test with larger accept length values
@@ -501,8 +501,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_random_data_consistency(self):
         # Test with random data to ensure general consistency
@@ -555,8 +555,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
                 tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
                 to_free_slots_triton=to_free_slots_triton.to("cpu")
                 # Compare results
-                self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-                self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+                self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_minimal_case(self):
         # Test with minimal possible values
@@ -607,8 +607,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_large_batch_size(self):
         # Test with a larger batch size to stress-test the implementation
@@ -659,8 +659,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
     def test_very_large_accept_length(self):
         # Test with very large accept length relative to num_verify_tokens
@@ -711,8 +711,8 @@ class TestGetTargetCacheLoc(unittest.TestCase):
         tgt_cache_loc_triton=tgt_cache_loc_triton.to("cpu")
         to_free_slots_triton=to_free_slots_triton.to("cpu")
         # Compare results
-        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton))
-        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton))
+        self.assertTrue(torch.equal(tgt_cache_loc_cpu, tgt_cache_loc_triton),f"Results differ:CPU: {tgt_cache_loc_cpu}Triton: {tgt_cache_loc_triton}")
+        self.assertTrue(torch.equal(to_free_slots_cpu, to_free_slots_triton),f"Results differ:CPU: {to_free_slots_cpu}Triton: {to_free_slots_triton}")
 
 
 if __name__ == "__main__":

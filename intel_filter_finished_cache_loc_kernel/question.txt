@@ -1,1 +1,32 @@
 其中八个示例两个出错
+
+======================================================================
+FAIL: test_basic_functionality_cpu_extension_vs_triton (__main__.TestFilterFinishedCacheLocKernel)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_filter_finished_cache_loc_kernel_new_1.py", line 101, in test_basic_functionality_cpu_extension_vs_triton
+    self.assertTrue(equal, f"Results differ:CPU: {cpu_result}Triton: {triton_result}")
+AssertionError: False is not true : Results differ:CPU: tensor([    0,     1,     4,     5,     6,     7,     9,    10,    11,    14,
+           15,     0,   113, 31931,     1,     0], dtype=torch.int32)Triton: tensor([ 0,  1,  4,  5,  6,  7,  9, 10, 11, 14, 15,  0,  0,  0,  0,  0],
+       dtype=torch.int32)
+
+======================================================================
+FAIL: test_max_values_cpu_extension_vs_triton (__main__.TestFilterFinishedCacheLocKernel)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_filter_finished_cache_loc_kernel_new_1.py", line 181, in test_max_values_cpu_extension_vs_triton
+    self.assertTrue(equal, f"Results differ:CPU: {cpu_result}Triton: {triton_result}")
+AssertionError: False is not true : Results differ:CPU: tensor([    999999,     999999,     999999,     999999,     999999,     999999,
+            999999,     999999,     999999,     999999,     999999,     999999,
+            999999,     999999,     999999,     999999,     999999,     999999,
+            999999,     999999,     999999,     999999,      24428,        417,
+                 0, -624882512,      31931, -624882512,      31931,          0,
+                 0,          0], dtype=torch.int32)Triton: tensor([999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999,
+        999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999, 999999,
+        999999, 999999, 999999, 999999,     87,     16,      6,     13,     23,
+            88,     50,     18,     73,     96], dtype=torch.int32)
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.553s
+
+FAILED (failures=2)

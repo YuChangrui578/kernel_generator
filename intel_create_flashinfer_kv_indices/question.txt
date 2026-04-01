@@ -1,1 +1,20 @@
 如果是子生成的ut，五个有一个错误，这个错误不是数值错误，应该是可以自己循环解决的
+
+======================================================================
+ERROR: test_large_batch_cpu_extension_vs_triton (__main__.TestCreateFlashInferKvIndices)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_kvindices_new_1.py", line 211, in test_large_batch_cpu_extension_vs_triton
+    kv_indptr_cpu = torch.cumsum(torch.tensor([0] + page_kernel_lens_cpu[:-1].tolist()), 0, dtype=torch.int32, device="cpu")
+TypeError: cumsum() received an invalid combination of arguments - got (Tensor, int, device=str, dtype=torch.dtype), but expected one of:
+ * (Tensor input, int dim, *, torch.dtype dtype = None, Tensor out = None)
+ * (Tensor input, name dim, *, torch.dtype dtype = None, Tensor out = None)
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.497s
+
+FAILED (errors=1)
+
+
+如果为ref的ut，其只有一种case，能够通过

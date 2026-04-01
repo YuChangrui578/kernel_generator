@@ -1,1 +1,16 @@
 其中六个示例一个出错
+
+
+..F...
+======================================================================
+FAIL: test_large_sequence_lengths_cpu_extension_vs_triton (__main__.TestGetNumKvSplits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_get_num_kv_splits_new_1.py", line 211, in test_large_sequence_lengths_cpu_extension_vs_triton
+    self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
+AssertionError: False is not true : Results differ:CPU: tensor([1, 1, 2, 2, 2, 2], dtype=torch.int32)Triton: tensor([2, 2, 3, 3, 3, 3], dtype=torch.int32)
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.429s
+
+FAILED (failures=1)

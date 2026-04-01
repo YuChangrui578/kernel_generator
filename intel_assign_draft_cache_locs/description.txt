@@ -1,0 +1,75 @@
+### Execution Flow
+1.  **Grid Initialization:** The kernel is launched with a 1D grid where the total number of threads corresponds to the total number of draft tokens across the entire batch. Each thread is responsible for calculating the cache location for a single draft token.
+2.  **Index Identification:** Each thread calculates its global linear index. If the index exceeds the total number of draft tokens, the thread exits immediately.
+3.  **Metadata Retrieval:** The active thread reads the `sequence_id` associated with its specific draft token to determine which sequence in the batch the token belongs to. It also reads the `draft_offset` (the position of the token within the draft sequence, e.g., 0, 1, 2...).
+4.  **Logical Position Calculation:** The thread retrieves the current sequence length (or the base prompt length) for the identified `sequence_id` from global memory. It calculates the logical KV cache slot index by adding the retrieved sequence length to the `draft_offset`.
+5.  **Physical Address Translation:** The kernel performs a lookup in the block table (or cache mapping structure) for the `sequence_id` using the calculated logical position. It determines the physical memory block ID and the offset within that block.
+6.  **Output Assignment:** The calculated physical cache location index is written to the output array at the thread's global index. This location array is subsequently used by attention kernels to write Key/Value values for the draft tokens.
+
+---
+
+### Pseudocode
+
+```cpp
+// Kernel: assign_draft_cache_locs
+// Inputs:
+//   seq_ids: Array mapping each draft token to its sequence ID
+//   draft_offsets: Array indicating the index of the token within the draft window (0 to N-1)
+//   seq_lengths: Array containing the current length of each sequence
+//   block_tables: 2D array mapping [seq_id][logical_block_index] to physical_block_index
+//   context: Configuration struct containing block_size and total_draft_tokens
+// Output:
+//   cache_locations: Array where each thread writes the physical slot index for its token
+
+__global__ void assign_draft_cache_locs(
+    const int* seq_ids,
+    const int* draft_offsets,
+    const int* seq_lengths,
+    const int* block_tables,
+    KernelContext context,
+    int* cache_locations
+) {
+    // 1. Calculate global thread index
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // 2. Boundary check
+    if (idx >= context.total_draft_tokens) {
+        return;
+    }
+
+    // 3. Retrieve token-specific metadata
+    int seq_id = seq_ids[idx];
+    int draft_pos = draft_offsets[idx];
+    
+    // 4. Get the base length of the sequence (the point before drafting starts)
+    int current_seq_len = seq_lengths[seq_id];
+
+    // 5. Calculate the logical token position in the cache
+    int logical_token_pos = current_seq_len + draft_pos;
+
+    // 6. Convert logical position to physical block and offset
+    int logical_block_idx = logical_token_pos / context.block_size;
+    int block_offset = logical_token_pos % context.block_size;
+
+    // Access the block table for the specific sequence
+    // Assuming block_tables is flattened as [num_seqs * max_blocks_per_seq]
+    int physical_block_id = block_tables[seq_id * context.max_blocks + logical_block_idx];
+
+    // 7. Calculate the final physical slot index
+    int physical_slot = physical_block_id * context.block_size + block_offset;
+
+    // 8. Write the result to the output buffer
+    cache_locations[idx] = physical_slot;
+}
+```
+
+---
+
+### Relevant Comments
+*   **`int idx = blockIdx.x * blockDim.x + threadIdx.x;`**: Establishes a unique identifier for each thread to process one element of the draft token array.
+*   **`if (idx >= context.total_draft_tokens) return;`**: Prevents out-of-bounds memory access when the number of threads launched exceeds the actual workload size.
+*   **`int seq_id = seq_ids[idx];`**: Fetches the sequence identifier. This is crucial because sequences in a batch may have different lengths and reside in different physical memory blocks.
+*   **`int logical_token_pos = current_seq_len + draft_pos;`**: Computes the absolute index of the draft token within the logical KV cache history. The draft tokens are appended contiguously after the existing context.
+*   **`int logical_block_idx = logical_token_pos / context.block_size;`**: Determines which logical block the token falls into based on the fixed size of cache blocks (e.g., 16 tokens per block).
+*   **`int physical_block_id = block_tables[...];`**: Looks up the actual memory block ID allocated for this sequence. This step handles the indirection required by paged attention or non-contiguous memory allocators.
+*   **`int physical_slot = physical_block_id * context.block_size + block_offset;`**: Constructs the flattened physical index that downstream kernels (like `paged_attention_kv`) use to read or write the specific Key and Value vectors.

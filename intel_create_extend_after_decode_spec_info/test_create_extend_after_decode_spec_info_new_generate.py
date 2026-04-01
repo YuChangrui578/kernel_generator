@@ -93,8 +93,8 @@ class TestCreateExtendAfterDecodeSpecInfo(unittest.TestCase):
         positions_ref_cpu = positions_xpu.cpu()
         new_verified_id_ref_cpu = new_verified_id_xpu.cpu()
         
-        self.assertTrue(torch.equal(positions_ref_cpu, positions_cpu))
-        self.assertTrue(torch.equal(new_verified_id_ref_cpu, new_verified_id_cpu))
+        self.assertTrue(torch.equal(positions_ref_cpu, positions_cpu),f"Results differ:CPU: {positions_cpu}Triton: {positions_ref_cpu}")
+        self.assertTrue(torch.equal(new_verified_id_ref_cpu, new_verified_id_cpu),f"Results differ:CPU: {new_verified_id_cpu}Triton: {new_verified_id_ref_cpu}")
 
     def test_create_extend_after_decode_spec_info_basic(self):
         # Basic test case
@@ -113,7 +113,7 @@ class TestCreateExtendAfterDecodeSpecInfo(unittest.TestCase):
         self._run_test(batch_size=1, bs_upper=1)
         
         # Edge case: small batch with large upper bound
-        self._run_test(batch_size=2, bs_upper=100)
+        self._run_test(batch_size=2, bs_upper=128)
 
 
 if __name__ == "__main__":

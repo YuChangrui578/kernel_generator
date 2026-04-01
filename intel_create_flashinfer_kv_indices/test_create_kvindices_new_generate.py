@@ -98,7 +98,7 @@ class TestCreateFlashInferKvIndices(unittest.TestCase):
 
         # Compare results (move Triton result to CPU for comparison)
         kv_indices_triton_cpu = kv_indices_triton.cpu()
-        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu))
+        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu),f"Results differ:CPU: {kv_indices_cpu}Triton: {kv_indices_triton_cpu}")
 
     def test_boundary_values_cpu_extension_vs_triton(self):
         # Test with boundary values
@@ -147,7 +147,7 @@ class TestCreateFlashInferKvIndices(unittest.TestCase):
 
         # Compare results
         kv_indices_triton_cpu = kv_indices_triton.cpu()
-        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu))
+        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu),f"Results differ:CPU: {kv_indices_cpu}Triton: {kv_indices_triton_cpu}")
 
     def test_with_start_idx_cpu_extension_vs_triton(self):
         # Test with non-zero start indices
@@ -196,7 +196,7 @@ class TestCreateFlashInferKvIndices(unittest.TestCase):
 
         # Compare results
         kv_indices_triton_cpu = kv_indices_triton.cpu()
-        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu))
+        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu),f"Results differ:CPU: {kv_indices_cpu}Triton: {kv_indices_triton_cpu}")
 
     def test_large_batch_cpu_extension_vs_triton(self):
         # Test with larger batch size
@@ -245,7 +245,7 @@ class TestCreateFlashInferKvIndices(unittest.TestCase):
 
         # Compare results
         kv_indices_triton_cpu = kv_indices_triton.cpu()
-        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu))
+        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu),f"Results differ:CPU: {kv_indices_cpu}Triton: {kv_indices_triton_cpu}")
 
     def test_empty_tensors(self):
         # Test with minimal valid inputs
@@ -294,7 +294,7 @@ class TestCreateFlashInferKvIndices(unittest.TestCase):
 
         # Compare results
         kv_indices_triton_cpu = kv_indices_triton.cpu()
-        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu))
+        self.assertTrue(torch.equal(kv_indices_cpu, kv_indices_triton_cpu),f"Results differ:CPU: {kv_indices_cpu}Triton: {kv_indices_triton_cpu}")
 
 
 if __name__ == "__main__":

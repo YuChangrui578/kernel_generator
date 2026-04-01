@@ -1,1 +1,83 @@
-具有问题且还未处理
+具有问题且还未处理，可以等我先处理一下
+
+======================================================================
+FAIL: test_create_extend_after_decode_spec_info_basic (__main__.TestCreateExtendAfterDecodeSpecInfo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 101, in test_create_extend_after_decode_spec_info_basic
+    self._run_test(batch_size=1, bs_upper=16)
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 97, in _run_test
+    self.assertTrue(torch.equal(new_verified_id_ref_cpu, new_verified_id_cpu),f"Results differ:CPU: {new_verified_id_cpu}Triton: {new_verified_id_ref_cpu}")
+AssertionError: False is not true : Results differ:CPU: tensor([593], dtype=torch.int32)Triton: tensor([0], dtype=torch.int32)
+
+======================================================================
+FAIL: test_create_extend_after_decode_spec_info_edge_cases (__main__.TestCreateExtendAfterDecodeSpecInfo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 113, in test_create_extend_after_decode_spec_info_edge_cases
+    self._run_test(batch_size=1, bs_upper=1)
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 97, in _run_test
+    self.assertTrue(torch.equal(new_verified_id_ref_cpu, new_verified_id_cpu),f"Results differ:CPU: {new_verified_id_cpu}Triton: {new_verified_id_ref_cpu}")
+AssertionError: False is not true : Results differ:CPU: tensor([31279], dtype=torch.int32)Triton: tensor([0], dtype=torch.int32)
+
+======================================================================
+FAIL: test_create_extend_after_decode_spec_info_large (__main__.TestCreateExtendAfterDecodeSpecInfo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 109, in test_create_extend_after_decode_spec_info_large
+    self._run_test(batch_size=128, bs_upper=256)
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 97, in _run_test
+    self.assertTrue(torch.equal(new_verified_id_ref_cpu, new_verified_id_cpu),f"Results differ:CPU: {new_verified_id_cpu}Triton: {new_verified_id_ref_cpu}")
+AssertionError: False is not true : Results differ:CPU: tensor([        16,         17,         19,         32,         46,         52,
+                55,         68,         81,         94,        108,        110,
+               118,        119,        134,        144,        150,        163,
+               169,        179,        196,        203,        204,        216,
+               221,        234,        248, 1241049584,      31280, 1250804272,
+        1251414640, 1251414640,      31280,  339207312,      31280,      25693,
+             25693,          0,          0,          0,      31280, 1251414640,
+        1250787376, 1250804272, 1250787376,          0,  339253872,          0,
+        1251423088, 1251423088,      31280, 1251117808,      31280,      31280,
+             31280, 1251409968, 1251423088, 1250804144, 1240852800, 1251117808,
+        1251117808,      31280,      31280,      31280,  339214128,  339213984,
+             31280,  339313392,  339313584,      31279,  339313712, 1250787376,
+         339313904, 1240852800,      31280, 1251117808, 1251117808,  339283760,
+             31279, 1251423088,      31280, 1240852704, 1251117808,      31280,
+             25693,         -1,  125568356,   25363324,  125568868,   25363613,
+        1819410539,  175901309,  325321062,  107611508,   75301251,  295700330,
+          41681028,   24908156,      25693, 1952671082, 1746720368, 1746720880,
+                 0,          0,      25693,      31279,         64,      25693,
+        1746721960,         64,         64,      25693, 1969382756,  538976288,
+         496234304,  351485088,      31279,          0, 1634476132, 1852142624,
+         779305300, 1919250527, 1852140905, 1752440864, 1701847155,  538976288,
+        1769172581,  538976288], dtype=torch.int32)Triton: tensor([ 16,  17,  19,  32,  46,  52,  55,  68,  81,  94, 108, 110, 118, 119,
+        134, 144, 150, 163, 169, 179, 196, 203, 204, 216, 221, 234, 248,  41,
+         38,  69,  49,  54,  13,  30,  69,  51,  61,  85,  88,  13,  10,  14,
+          3,  15,   6,  17,  18,  16,   8,   1,   7,   0,   0,   0,   0,   0,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+          0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+          0,   0], dtype=torch.int32)
+
+======================================================================
+FAIL: test_create_extend_after_decode_spec_info_medium (__main__.TestCreateExtendAfterDecodeSpecInfo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 105, in test_create_extend_after_decode_spec_info_medium
+    self._run_test(batch_size=32, bs_upper=64)
+  File "/home/yuchangrui/sglang/test/registered/attention/test_create_extend_after_decode_spec_info_new_1.py", line 97, in _run_test
+    self.assertTrue(torch.equal(new_verified_id_ref_cpu, new_verified_id_cpu),f"Results differ:CPU: {new_verified_id_cpu}Triton: {new_verified_id_ref_cpu}")
+AssertionError: False is not true : Results differ:CPU: tensor([        13,         29,         46,          0,          1,      31279,
+        1746756928,        128,          0,          1,      25693,          0,
+        1848927544, 1915043190, 1601467760, 1683973480, 1667592816,  946890335,
+        1852139296, 1633841004, 1668505452, 1936615712, 1635020389, 1970167672,
+        1600484201, 1835627632, 1751348321, 1935631724,  624785263,  539783717,
+        1735549300, 1601204833], dtype=torch.int32)Triton: tensor([ 13,  29,  46,  65,  71,  75,  76,  80,  91,  96,  99, 101, 115, 116,
+        121,  68,  18,  78, 173, 186, 187, 197, 199, 211, 214, 232, 240, 245,
+          4,  10,   2,  70], dtype=torch.int32)
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.546s
+
+FAILED (failures=4)

@@ -110,7 +110,7 @@ class TestGetNumKvSplits(unittest.TestCase):
 
         # Compare results (move Triton result to CPU for comparison)
         num_kv_splits_triton_cpu = num_kv_splits_triton.cpu()
-        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu))
+        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
 
     def test_boundary_values_cpu_extension_vs_triton(self):
         # Test with boundary values
@@ -159,7 +159,7 @@ class TestGetNumKvSplits(unittest.TestCase):
 
         # Compare results
         num_kv_splits_triton_cpu = num_kv_splits_triton.cpu()
-        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu))
+        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
 
     def test_large_sequence_lengths_cpu_extension_vs_triton(self):
         # Test with larger sequence lengths
@@ -208,7 +208,7 @@ class TestGetNumKvSplits(unittest.TestCase):
 
         # Compare results
         num_kv_splits_triton_cpu = num_kv_splits_triton.cpu()
-        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu))
+        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
 
     def test_maximal_splits_cpu_extension_vs_triton(self):
         # Test with maximum possible splits
@@ -257,7 +257,7 @@ class TestGetNumKvSplits(unittest.TestCase):
 
         # Compare results
         num_kv_splits_triton_cpu = num_kv_splits_triton.cpu()
-        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu))
+        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
 
     def test_single_sequence_single_group_cpu_extension_vs_triton(self):
         # Test with single sequence and single group
@@ -306,7 +306,7 @@ class TestGetNumKvSplits(unittest.TestCase):
 
         # Compare results
         num_kv_splits_triton_cpu = num_kv_splits_triton.cpu()
-        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu))
+        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
 
     def test_various_head_configurations_cpu_extension_vs_triton(self):
         # Test with various head configurations
@@ -355,7 +355,7 @@ class TestGetNumKvSplits(unittest.TestCase):
 
         # Compare results
         num_kv_splits_triton_cpu = num_kv_splits_triton.cpu()
-        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu))
+        self.assertTrue(torch.equal(num_kv_splits_cpu, num_kv_splits_triton_cpu),f"Results differ:CPU: {num_kv_splits_cpu}Triton: {num_kv_splits_triton_cpu}")
 
 
 if __name__ == "__main__":

@@ -62,7 +62,7 @@ class TestAssignReqToTokenPool(unittest.TestCase):
                     token_pool_xpu[req_idx][out_start + (j - start)] = req_to_token_xpu[req_idx][j]
 
         # Compare results by moving XPU result to CPU
-        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()))
+        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()),f"Results differ:CPU: {token_pool_cpu}Triton: {token_pool_xpu.cpu()}")
 
     def test_boundary_values(self):
         # Test with boundary values
@@ -115,7 +115,7 @@ class TestAssignReqToTokenPool(unittest.TestCase):
                     token_pool_xpu[req_idx][out_start + (j - start)] = req_to_token_xpu[req_idx][j]
 
         # Compare results by moving XPU result to CPU
-        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()))
+        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()),f"Results differ:CPU: {token_pool_cpu}Triton: {token_pool_xpu.cpu()}")
 
     def test_with_start_end_offset(self):
         # Test with different start and end offsets
@@ -167,7 +167,7 @@ class TestAssignReqToTokenPool(unittest.TestCase):
                     token_pool_xpu[req_idx][out_start + (j - start)] = req_to_token_xpu[req_idx][j]
 
         # Compare results by moving XPU result to CPU
-        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()))
+        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()),f"Results differ:CPU: {token_pool_cpu}Triton: {token_pool_xpu.cpu()}")
 
     def test_large_batch(self):
         # Test with larger batch size
@@ -221,7 +221,7 @@ class TestAssignReqToTokenPool(unittest.TestCase):
                     token_pool_xpu[req_idx][out_start + (j - start)] = req_to_token_xpu[req_idx][j]
 
         # Compare results by moving XPU result to CPU
-        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()))
+        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()),f"Results differ:CPU: {token_pool_cpu}Triton: {token_pool_xpu.cpu()}")
 
     def test_empty_tensors(self):
         # Test with empty ranges
@@ -263,7 +263,7 @@ class TestAssignReqToTokenPool(unittest.TestCase):
 
         # For empty ranges, the XPU simulation should also result in no changes
         # Compare results by moving XPU result to CPU
-        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()))
+        self.assertTrue(torch.equal(token_pool_cpu, token_pool_xpu.cpu()),f"Results differ:CPU: {token_pool_cpu}Triton: {token_pool_xpu.cpu()}")
 
 
 if __name__ == "__main__":
