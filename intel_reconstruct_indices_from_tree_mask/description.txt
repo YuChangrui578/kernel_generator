@@ -1,0 +1,134 @@
+Looking at the CUDA kernel, I'll trace through the exact execution flow and convert it to CPU code. Here's the detailed runtime process:
+
+## Execution Flow Analysis
+
+The CUDA kernel processes each thread (blockIdx.x, threadIdx.x) independently to compute tree-based indices for speculative decoding. On CPU, we need to simulate the parallel execution using nested loops.
+
+## CPU Implementation Pseudocode
+
+```cpp
+void reconstruct_indices_from_tree_mask_cpu(
+    at::Tensor tree_mask,           // [batch_size, draft_token_num, draft_token_num]
+    at::Tensor verified_seq_len,    // [batch_size]
+    at::Tensor positions,           // [batch_size, draft_token_num]
+    at::Tensor retrive_index,       // [batch_size, draft_token_num]
+    at::Tensor retrive_next_token,  // [batch_size, draft_token_num]
+    at::Tensor retrive_next_sibling,// [batch_size, draft_token_num]
+    int64_t batch_size,
+    int64_t draft_token_num) {
+    
+    // CPU version: simulate the parallel execution with nested loops
+    // Each (bid, tid) combination represents one CUDA thread's work
+    
+    for (int bid = 0; bid < batch_size; bid++) {
+        if (bid >= batch_size) continue;
+        
+        int base_offset = draft_token_num * draft_token_num;
+        // token_idx: maps to range [bid * draft_token_num, (bid + 1) * draft_token_num)
+        int token_idx = bid * draft_token_num;
+        // tree_mask_idx: maps to range [bid * base_offset, (bid + 1) * base_offset)
+        int tree_mask_offset = bid * base_offset;
+        
+        for (int tid = 0; tid < draft_token_num; tid++) {
+            if (tid >= draft_token_num) continue;
+            
+            // Process current thread's work (equivalent to CUDA thread with (bid, tid))
+            
+            // Step 1: Calculate depth and find parent index
+            // Loop backwards from current token to find all ancestors
+            int depth = 0;
+            int parent_idx = -1;
+            
+            // For each previous token i (from tid-1 down to 0), check if it's an ancestor
+            for (int i = tid - 1, start_idx = tree_mask_offset + tid * draft_token_num; i >= 0; i--) {
+                // Check if tree_mask[bid][tid][i] is true (current token tid depends on previous token i)
+                if (tree_mask.data_ptr<bool>()[start_idx + i]) {
+                    depth++;  // Increment depth since we found an ancestor
+                    if (parent_idx == -1) {
+                        // Record the first (closest) ancestor as parent
+                        parent_idx = i;
+                    }
+                }
+            }
+            
+            // Step 2: Set retrieve index (identity mapping)
+            // Maps current position to itself initially
+            retrive_index.data_ptr<int64_t>()[token_idx + tid] = token_idx + tid;
+            
+            // Step 3: Set position based on depth and verified sequence length
+            // Position = verified sequence length + depth in tree
+            positions.data_ptr<int64_t>()[token_idx + tid] = 
+                depth + verified_seq_len.data_ptr<int64_t>()[bid];
+            
+            // Step 4: Find next token that depends on current token
+            // Look forward to find tokens that have dependency on current token
+            int next_token_idx = -1;
+            for (int i = tid + 1; i < draft_token_num; i++) {
+                // Check if tree_mask[bid][i][tid] is true (token i depends on current token tid)
+                if (tree_mask.data_ptr<bool>()[tree_mask_offset + i * draft_token_num + tid]) {
+                    next_token_idx = i;  // Found first token that depends on current
+                    break;
+                }
+            }
+            retrive_next_token.data_ptr<int64_t>()[token_idx + tid] = next_token_idx;
+            
+            // Step 5: Find next sibling (tokens that share same parent)
+            int next_sibling_idx = -1;
+            if (parent_idx != -1) {  // Only search siblings if current token has a parent
+                for (int i = tid + 1; i < draft_token_num; i++) {
+                    // Check if token i shares the same parent as current token
+                    int start_idx = tree_mask_offset + i * draft_token_num + parent_idx;
+                    
+                    if (tree_mask.data_ptr<bool>()[start_idx]) {  // Token i has same parent
+                        // Verify this is truly a sibling by checking no intermediate dependencies exist
+                        bool is_sibling = true;
+                        int end_idx = tree_mask_offset + i * draft_token_num + i;
+                        
+                        // Check if there are any dependencies between parent_idx+1 and i-1
+                        // This ensures token i only depends on parent, not on tokens in between
+                        for (int j = start_idx + 1; j < end_idx; ++j) {
+                            if (tree_mask.data_ptr<bool>()[j]) {
+                                is_sibling = false;  // Found intermediate dependency, not a sibling
+                                break;
+                            }
+                        }
+                        
+                        if (is_sibling) {
+                            next_sibling_idx = i;  // Found next sibling
+                            break;
+                        }
+                    }
+                }
+            }
+            retrive_next_sibling.data_ptr<int64_t>()[token_idx + tid] = next_sibling_idx;
+        }
+    }
+}
+```
+
+## Detailed Runtime Process Description
+
+**Step-by-step execution for each (bid, tid) pair:**
+
+1. **Initialization Phase**: For batch `bid` and token position `tid`, calculate memory offsets:
+   - `base_offset = draft_token_num²` (size of one complete tree mask matrix)
+   - `token_idx = bid × draft_token_num` (starting index for current batch's tokens)
+   - `tree_mask_offset = bid × base_offset` (starting index for current batch's tree mask)
+
+2. **Depth Calculation**: Traverse backward from current token `tid` to find ancestral relationships:
+   - For each previous token `i` where `i < tid`, check if `tree_mask[tid][i]` is true
+   - Count total ancestors to determine depth in tree structure
+   - Record the closest ancestor as parent (first encountered when traversing backward)
+
+3. **Position Assignment**: Compute absolute position in sequence:
+   - Current position = verified sequence length + tree depth of current token
+
+4. **Next Token Discovery**: Scan forward to find first token that depends on current:
+   - Search tokens `i > tid` where `tree_mask[i][tid]` is true
+   - Represents the first child in dependency chain
+
+5. **Sibling Detection**: When parent exists, find next token sharing same parent:
+   - Must verify no intermediate dependencies exist between parent and candidate
+   - Ensures structural integrity of tree relationships
+
+This CPU implementation maintains identical functionality to the CUDA kernel while executing sequentially across all (batch, token) combinations.

@@ -1,0 +1,43 @@
+{
+    "kernel": "reconstruct_indices_from_tree_mask",
+    "inputs": [
+        {
+            "name": "tree_mask",
+            "meaning": "Boolean mask representing the tree structure of draft tokens where tree_mask[i][j] indicates if token j is a child of token i in the speculative decoding tree",
+            "shape": "[bs * draft_token_num * draft_token_num]",
+            "inference_role": "Defines the hierarchical relationship between draft tokens during speculative decoding"
+        },
+        {
+            "name": "verified_seq_len",
+            "meaning": "Length of the verified sequence for each batch, indicating how many tokens have been confirmed correct so far",
+            "shape": "[bs]",
+            "inference_role": "Provides the base position offset for calculating absolute token positions in the sequence"
+        },
+        {
+            "name": "positions",
+            "meaning": "Output tensor that will store the absolute positions of tokens in the sequence",
+            "shape": "[bs * draft_token_num]",
+            "inference_role": "Used to map draft tokens to their actual sequence positions during inference"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "retrive_index",
+            "meaning": "Index mapping that maps each draft token to its original position in the flattened batch-draft dimension",
+            "shape": "[bs, draft_token_num]",
+            "inference_role": "Maintains correspondence between draft tokens and their original indices for tracking purposes"
+        },
+        {
+            "name": "retrive_next_token",
+            "meaning": "For each draft token, stores the index of the next token in the same branch of the tree (or -1 if none)",
+            "shape": "[bs, draft_token_num]",
+            "inference_role": "Enables traversal along the same branch of the speculative tree during inference"
+        },
+        {
+            "name": "retrive_next_sibling",
+            "meaning": "For each draft token, stores the index of its next sibling in the tree structure (or -1 if no sibling exists)",
+            "shape": "[bs, draft_token_num]",
+            "inference_role": "Enables traversal across siblings in the speculative tree, supporting parallel verification of alternative branches"
+        }
+    ]
+}

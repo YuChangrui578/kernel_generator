@@ -1,0 +1,101 @@
+Looking at the CUDA kernel, I'll convert it to CPU code and describe its execution flow:
+
+## Execution Flow Description
+
+The kernel processes each batch independently on the CPU. For each batch, it traverses a tree structure of draft tokens using greedy verification against target predictions. It starts from the first accepted token and attempts to accept subsequent tokens by matching draft tokens with target tokens. When a match occurs, the token is accepted and the algorithm moves to the next level in the tree. If no match is found among siblings at the current level, the process stops for that batch.
+
+## CPU Implementation Pseudocode
+
+```cpp
+void verify_tree_greedy_cpu(
+    std::vector<int32_t>& predicts,           // [tot_num_draft_tokens]
+    std::vector<int32_t>& accept_index,       // [batch_size][num_speculative_tokens] 
+    std::vector<int32_t>& accept_token_num,   // [batch_size] - mutable
+    const std::vector<std::vector<int64_t>>& candidates,          // [batch_size][num_draft_tokens]
+    const std::vector<std::vector<int64_t>>& retrive_index,       // [batch_size][num_draft_tokens]
+    const std::vector<std::vector<int64_t>>& retrive_next_token,  // [batch_size][num_draft_tokens] 
+    const std::vector<std::vector<int64_t>>& retrive_next_sibling,// [batch_size][num_draft_tokens]
+    const std::vector<std::vector<int64_t>>& target_predict) {    // [batch_size][num_draft_tokens]
+    
+    uint32_t batch_size = candidates.size();
+    uint32_t num_speculative_tokens = accept_index[0].size(); // Assuming all batches have same size
+    uint32_t num_draft_tokens = candidates[0].size();
+    
+    // Process each batch sequentially
+    for (uint32_t bx = 0; bx < batch_size; ++bx) {
+        
+        // Initialize state for current batch
+        int64_t last_accepted_retrive_idx = retrive_index[bx][0]; // First element of current batch
+        accept_index[bx][0] = last_accepted_retrive_idx; // Store first accepted index
+        
+        uint32_t num_accepted_tokens = 0;
+        int64_t cur_index = 0; // Start from root of tree for current batch
+        
+        // Traverse through speculative tokens for current batch
+        for (uint32_t j = 1; j < num_speculative_tokens; ++j) {
+            
+            // Move to next token in the tree structure
+            cur_index = retrive_next_token[bx][cur_index];
+            
+            // Traverse siblings at current level until match is found or all siblings are exhausted
+            while (cur_index != -1) {
+                
+                // Get draft token information for current position
+                int64_t draft_index = retrive_index[bx][cur_index];
+                int64_t draft_token_id = candidates[bx][cur_index];
+                int64_t target_token_id = target_predict[bx][last_accepted_retrive_idx];
+                
+                if (draft_token_id == target_token_id) {
+                    // Token accepted - update prediction and tracking variables
+                    predicts[last_accepted_retrive_idx] = static_cast<int32_t>(target_token_id);
+                    ++num_accepted_tokens;
+                    
+                    // Record the accepted token's index
+                    accept_index[bx][num_accepted_tokens] = static_cast<int32_t>(draft_index);
+                    
+                    // Update the last accepted retrieve index for next iteration
+                    last_accepted_retrive_idx = draft_index;
+                    
+                    // Break out of sibling traversal loop - move to next level
+                    break;
+                } else {
+                    // No match - try next sibling at current level
+                    cur_index = retrive_next_sibling[bx][cur_index];
+                }
+            }
+            
+            // If no valid sibling found (cur_index == -1), stop processing for this batch
+            if (cur_index == -1) {
+                break;
+            }
+        }
+        
+        // Store total number of accepted tokens for current batch
+        accept_token_num[bx] = num_accepted_tokens;
+        
+        // Set final prediction for the last accepted token (this seems to be redundant based on loop logic)
+        // but present in original code
+        predicts[last_accepted_retrive_idx] = static_cast<int32_t>(target_predict[bx][last_accepted_retrive_idx]);
+    }
+}
+```
+
+## Detailed Execution Comments
+
+1. **Batch-level parallelism becomes sequential**: Unlike the CUDA version where each `blockIdx.x` processes one batch in parallel, the CPU version processes batches one after another.
+
+2. **Tree traversal logic**: The algorithm maintains a tree structure where:
+   - `retrive_next_token` points to child nodes in the tree
+   - `retrive_next_sibling` points to sibling nodes at the same depth
+   - The traversal follows a "first child, then siblings" pattern
+
+3. **Greedy acceptance strategy**: At each level, the algorithm tries to find the first matching draft token among siblings. Once found, it accepts that token and moves to the next level.
+
+4. **Early termination**: If no matching token is found among all siblings at a given level (`cur_index == -1`), the verification process stops for that batch.
+
+5. **State management**: Each batch maintains its own:
+   - `last_accepted_retrive_idx`: tracks the most recently accepted token's index
+   - `num_accepted_tokens`: counts how many tokens were successfully verified
+   - `cur_index`: current position in the tree traversal
+
+The CPU implementation preserves the exact same logical flow and semantics as the original CUDA kernel, just executed sequentially across batches instead of in parallel.

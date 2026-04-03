@@ -1,0 +1,73 @@
+{
+    "kernel": "verify_tree_greedy",
+    "inputs": [
+        {
+            "name": "predicts",
+            "meaning": "Array storing the final predicted tokens for each sequence position, updated during verification process",
+            "shape": "[tot_num_draft_tokens]",
+            "inference_role": "Output buffer for accepted tokens during speculative decoding verification"
+        },
+        {
+            "name": "accept_index",
+            "meaning": "Indices of tokens that were accepted during the verification process for each batch",
+            "shape": "[bs, num_spec_step]",
+            "inference_role": "Tracks which draft token positions were successfully accepted in each batch"
+        },
+        {
+            "name": "accept_token_num",
+            "meaning": "Number of tokens accepted for each batch after verification against target predictions",
+            "shape": "[bs]",
+            "inference_role": "Counts accepted tokens per batch for speculative decoding efficiency tracking"
+        },
+        {
+            "name": "candidates",
+            "meaning": "Candidate tokens generated during speculative decoding that need verification",
+            "shape": "[bs, num_draft_tokens]",
+            "inference_role": "Holds draft tokens from the proposal model to be validated against target model"
+        },
+        {
+            "name": "retrive_index",
+            "meaning": "Mapping indices to retrieve correct positions in the verification tree structure",
+            "shape": "[bs, num_draft_tokens]",
+            "inference_role": "Provides positional mapping for navigating the speculative decoding tree"
+        },
+        {
+            "name": "retrive_next_token",
+            "meaning": "Index pointing to next token in the verification tree for each draft token position",
+            "shape": "[bs, num_draft_tokens]",
+            "inference_role": "Enables tree traversal to check sibling candidate tokens during verification"
+        },
+        {
+            "name": "retrive_next_sibling",
+            "meaning": "Index pointing to next sibling token in the verification tree structure",
+            "shape": "[bs, num_draft_tokens]",
+            "inference_role": "Allows checking alternative candidate tokens when primary ones don't match"
+        },
+        {
+            "name": "target_predict",
+            "meaning": "Target model predictions to verify against the candidate tokens from speculative decoding",
+            "shape": "[bs, num_draft_tokens]",
+            "inference_role": "Reference tokens from target model used to validate speculative decoding results"
+        }
+    ],
+    "outputs": [
+        {
+            "name": "predicts",
+            "meaning": "Updated array of final prediction tokens after verification process completes",
+            "shape": "[tot_num_draft_tokens]",
+            "inference_role": "Contains accepted tokens that passed verification, forming the final output sequence"
+        },
+        {
+            "name": "accept_index",
+            "meaning": "Final indices of successfully verified tokens for each batch after greedy verification",
+            "shape": "[bs, num_spec_step]",
+            "inference_role": "Records which positions in the draft sequence were confirmed as valid"
+        },
+        {
+            "name": "accept_token_num",
+            "meaning": "Final count of successfully verified tokens for each batch after verification",
+            "shape": "[bs]",
+            "inference_role": "Provides acceptance rate statistics for speculative decoding performance"
+        }
+    ]
+}
