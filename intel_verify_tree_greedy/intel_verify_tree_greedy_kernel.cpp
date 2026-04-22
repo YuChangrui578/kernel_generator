@@ -24,71 +24,74 @@ void verify_tree_greedy_cpu_impl(
     uint32_t num_speculative_tokens,
     uint32_t num_draft_tokens) {
   
-  // Process each batch sequentially
-  for (uint32_t bx = 0; bx < batch_size; ++bx) {
+  // 并行处理 batch：PyTorch 官方CPU多线程接口，自动分配任务
+  at::parallel_for(0, (int64_t)batch_size, 0, [&](int64_t begin, int64_t end) {
+    // 每个线程处理 [begin, end) 区间的 batch
+    for (uint32_t bx = (uint32_t)begin; bx < (uint32_t)end; ++bx) {
+        
+      // Calculate offsets for current batch
+      uint32_t candidate_offset = bx * num_draft_tokens;
+      uint32_t retrive_index_offset = bx * num_draft_tokens;
+      uint32_t next_token_offset = bx * num_draft_tokens;
+      uint32_t next_sibling_offset = bx * num_draft_tokens;
+      uint32_t target_offset = bx * num_draft_tokens;
+      uint32_t accept_index_offset = bx * num_speculative_tokens;
       
-    // Calculate offsets for current batch
-    uint32_t candidate_offset = bx * num_draft_tokens;
-    uint32_t retrive_index_offset = bx * num_draft_tokens;
-    uint32_t next_token_offset = bx * num_draft_tokens;
-    uint32_t next_sibling_offset = bx * num_draft_tokens;
-    uint32_t target_offset = bx * num_draft_tokens;
-    uint32_t accept_index_offset = bx * num_speculative_tokens;
-    
-    // Initialize state for current batch
-    int64_t last_accepted_retrive_idx = retrive_index[retrive_index_offset];
-    accept_index[accept_index_offset] = static_cast<int32_t>(last_accepted_retrive_idx);
-    
-    uint32_t num_accepted_tokens = 0;
-    int64_t cur_index = 0; // Start from root of tree for current batch
-    
-    // Traverse through speculative tokens for current batch
-    for (uint32_t j = 1; j < num_speculative_tokens; ++j) {
-        
-      // Move to next token in the tree structure
-      cur_index = retrive_next_token[next_token_offset + cur_index];
+      // Initialize state for current batch
+      int64_t last_accepted_retrive_idx = retrive_index[retrive_index_offset];
+      accept_index[accept_index_offset] = static_cast<int32_t>(last_accepted_retrive_idx);
       
-      // Traverse siblings at current level until match is found or all siblings are exhausted
-      while (cur_index != -1) {
-          
-        // Get draft token information for current position
-        int64_t draft_index = retrive_index[retrive_index_offset + cur_index];
-        int64_t draft_token_id = candidates[candidate_offset + cur_index];
+      uint32_t num_accepted_tokens = 0;
+      int64_t cur_index = 0; // Start from root of tree for current batch
+      
+      // Traverse through speculative tokens for current batch
+      for (uint32_t j = 1; j < num_speculative_tokens; ++j) {
         
-        // Use last_accepted_retrive_idx as the target position (as per CUDA reference)
-        int64_t target_token_id = target_predict[last_accepted_retrive_idx];
+        // Move to next token in the tree structure
+        cur_index = retrive_next_token[next_token_offset + cur_index];
         
-        if (draft_token_id == target_token_id) {
-          // Token accepted - update prediction and tracking variables
-          predicts[last_accepted_retrive_idx] = static_cast<int32_t>(target_token_id);
-          ++num_accepted_tokens;
+        // Traverse siblings at current level until match is found or all siblings are exhausted
+        while (cur_index != -1) {
+            
+          // Get draft token information for current position
+          int64_t draft_index = retrive_index[retrive_index_offset + cur_index];
+          int64_t draft_token_id = candidates[candidate_offset + cur_index];
           
-          // Record the accepted token's index
-          accept_index[accept_index_offset + num_accepted_tokens] = static_cast<int32_t>(draft_index);
+          // Use last_accepted_retrive_idx as the target position (as per CUDA reference)
+          int64_t target_token_id = target_predict[last_accepted_retrive_idx];
           
-          // Update the last accepted retrieve index for next iteration
-          last_accepted_retrive_idx = draft_index;
-          
-          // Break out of sibling traversal loop - move to next level
+          if (draft_token_id == target_token_id) {
+            // Token accepted - update prediction and tracking variables
+            predicts[last_accepted_retrive_idx] = static_cast<int32_t>(target_token_id);
+            ++num_accepted_tokens;
+            
+            // Record the accepted token's index
+            accept_index[accept_index_offset + num_accepted_tokens] = static_cast<int32_t>(draft_index);
+            
+            // Update the last accepted retrieve index for next iteration
+            last_accepted_retrive_idx = draft_index;
+            
+            // Break out of sibling traversal loop - move to next level
+            break;
+          } else {
+            // No match - try next sibling at current level
+            cur_index = retrive_next_sibling[next_sibling_offset + cur_index];
+          }
+        }
+        
+        // If no valid sibling found (cur_index == -1), stop processing for this batch
+        if (cur_index == -1) {
           break;
-        } else {
-          // No match - try next sibling at current level
-          cur_index = retrive_next_sibling[next_sibling_offset + cur_index];
         }
       }
       
-      // If no valid sibling found (cur_index == -1), stop processing for this batch
-      if (cur_index == -1) {
-        break;
-      }
+      // Store total number of accepted tokens for current batch
+      accept_token_num[bx] = num_accepted_tokens;
+      
+      // Set final prediction for the last accepted token
+      predicts[last_accepted_retrive_idx] = static_cast<int32_t>(target_predict[last_accepted_retrive_idx]);
     }
-    
-    // Store total number of accepted tokens for current batch
-    accept_token_num[bx] = num_accepted_tokens;
-    
-    // Set final prediction for the last accepted token
-    predicts[last_accepted_retrive_idx] = static_cast<int32_t>(target_predict[last_accepted_retrive_idx]);
-  }
+  });
 }
 
 void verify_tree_greedy(
